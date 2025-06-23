@@ -27,7 +27,7 @@ public class Paciente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true, length = 10, nullable = false)
+    @Column(unique = true, length = 12, nullable = false) // datafaker mata la app si es menos de 12
     private String run;
 
     @Column(nullable = false)

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,18 +33,15 @@ public class PacienteControllerV2 {
     @Autowired
     private PacienteModelAssembler assembler;
     
-    @GetMapping(produces = MediaTypes.HAL_FORMS_JSON_VALUE)
-    public ResponseEntity<CollectionModel<EntityModel<Paciente>>> listar(){
+    @GetMapping(produces = MediaTypes.HAL_JSON_VALUE)
+    public CollectionModel<EntityModel<Paciente>> listar(){
         List<EntityModel<Paciente>> pacientes = pacienteService.obtenerPacientes().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
-        if(pacientes.isEmpty()){
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(CollectionModel.of(
+        return CollectionModel.of(
                 pacientes,
                 linkTo(methodOn(PacienteControllerV2.class).listar()).withSelfRel()
-        ));
+        );
     }
 
     @GetMapping(value = "/{id}", produces = MediaTypes.HAL_JSON_VALUE)
@@ -60,14 +56,17 @@ public class PacienteControllerV2 {
     @PostMapping(produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<EntityModel<Paciente>> guardar(@RequestBody Paciente paciente) {
         Paciente pacienteNuevo = pacienteService.guardarPaciente(paciente);
-        return ResponseEntity.created(linkTo(methodOn(PacienteControllerV2.class).guardar(pacienteNuevo.getId())).toUri())
+        return ResponseEntity.created(linkTo(methodOn(PacienteControllerV2.class).buscar((long)(pacienteNuevo.getId()))).toUri())
                 .body(assembler.toModel(pacienteNuevo));
     }
 
     @PutMapping(value = "/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<EntityModel<Paciente>> actualizar(@PathVariable Long id, @RequestBody Paciente paciente){
-        paciente.setId(id);
+        paciente.setId(id.intValue());
         Paciente updatePaciente = pacienteService.guardarPaciente(paciente);
+        if(updatePaciente == null){
+            return ResponseEntity.notFound().build();
+        }
             return ResponseEntity.ok(assembler.toModel(updatePaciente));
         
     }

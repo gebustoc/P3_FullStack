@@ -7,13 +7,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.neurotecno.cl.neurotecno.model.Atencion;
+import com.neurotecno.cl.neurotecno.model.Medico;
+import com.neurotecno.cl.neurotecno.model.Paciente;
 import com.neurotecno.cl.neurotecno.repository.AtencionRepository;
+import com.neurotecno.cl.neurotecno.repository.MedicoRepository;
+import com.neurotecno.cl.neurotecno.repository.PacienteRepository;
 
 @Service
 public class AtencionService {
 
     @Autowired
     private AtencionRepository atencionRepository;
+
+    @Autowired
+    private PacienteRepository pacienteRepository;
+
+    @Autowired
+    private PacienteService pacienteService;
+
+    @Autowired
+    private MedicoService medicoService;
+
+    @Autowired
+    private MedicoRepository medicoRepository;
 
     public List<Atencion> obtenerAtenciones() {
         return atencionRepository.findAll();
@@ -78,13 +94,26 @@ public class AtencionService {
     }
     
 
+   //eliminar por cascada
+   public void deleteById(Long id) {
+    Atencion atencion = atencionRepository.findById(id)
+    .orElseThrow(() -> new RuntimeException("Atencion no encontrada"));
 
+    List<Paciente> pacientes  =  pacienteRepository.findByAtencionID(atencion.getId());
+    List<Medico> medicos  =  medicoRepository.findByAtencionID(atencion.getId());
 
+    for (Paciente paciente : pacientes) {
+            pacienteService.deleteById(Long.valueOf(paciente.getId()));
+        }
 
+     
+    for (Medico medico : medicos) {
+            medicoService.deleteById(Long.valueOf(medico.getId()));   
+   }
 
+   atencionRepository.delete(atencion);
 
-
-
+    }
 
 
 

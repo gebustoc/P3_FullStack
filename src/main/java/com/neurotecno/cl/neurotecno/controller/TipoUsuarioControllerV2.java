@@ -3,7 +3,6 @@ package com.neurotecno.cl.neurotecno.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.tomcat.util.http.parser.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -35,17 +34,14 @@ public class TipoUsuarioControllerV2 {
     @Autowired
     private TipoUsuarioModelAssembler assembler;
 
-    @GetMapping(produces = MediaTypes.HAL_FORMS_JSON_VALUE)
-    public ResponseEntity<CollectionModel<EntityModel<TipoUsuario>>> listar(){
+    @GetMapping(produces = MediaTypes.HAL_JSON_VALUE)
+    public CollectionModel<EntityModel<TipoUsuario>> listar(){
         List <EntityModel<TipoUsuario>> tipoUsuarios = tipousuarioService.obtenerTipoUsuarios().stream().map(assembler::toModel)
         .collect(Collectors.toList());
-        if(tipoUsuarios.isEmpty()){
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(CollectionModel.of(
+        return CollectionModel.of(
             tipoUsuarios,
             linkTo(methodOn(TipoUsuarioControllerV2.class).listar()).withSelfRel()
-        ));
+        );
     }
 
     @GetMapping(value = "/{id}", produces = MediaTypes.HAL_FORMS_JSON_VALUE)
@@ -62,14 +58,17 @@ public class TipoUsuarioControllerV2 {
     public ResponseEntity<EntityModel<TipoUsuario>> guardar(@RequestBody TipoUsuario tipoUsuario) {
         TipoUsuario nuevoTipoUsuario = tipousuarioService.guardarTipoUsuario(tipoUsuario);
         return ResponseEntity
-            .created(linkTo(methodOn(TipoUsuarioControllerV2.class).guardar(nuevoTipoUsuario).toUri()
-            .body(assembler.toModel(nuevoTipoUsuario))));
+            .created(linkTo(methodOn(TipoUsuarioControllerV2.class).buscar((long)(nuevoTipoUsuario.getId()))).toUri())
+            .body(assembler.toModel(nuevoTipoUsuario));
     }
 
     @PutMapping(value = "/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<EntityModel<TipoUsuario>> actualizar(@PathVariable Long id, @RequestBody TipoUsuario tipoUsuario){
-        tipoUsuario.setId(Integer.valueOf(id.intValue()));
-        TipoUsuario updateTipoUsuario = TipoUsuarioService.guardarTipoUsuario(tipoUsuario);
+        tipoUsuario.setId(id.intValue());
+        TipoUsuario updateTipoUsuario = tipousuarioService.guardarTipoUsuario(tipoUsuario);
+        if(updateTipoUsuario == null){
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(assembler.toModel(updateTipoUsuario));
         
     }
@@ -77,10 +76,10 @@ public class TipoUsuarioControllerV2 {
     @PatchMapping(value = "/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<EntityModel<TipoUsuario>> patchTipoUsuario(@PathVariable Long id, @RequestBody TipoUsuario tipoUsuario) {
         TipoUsuario actualizar = tipousuarioService.editarTipoUsuario(id, tipoUsuario);
-        if (actualizarTipoUsuario == null) {
+        if (actualizar == null) {
             return ResponseEntity.notFound().build();
         }   
-        return ResponseEntity.ok(assembler.toModel(updateTipoUsuario));
+        return ResponseEntity.ok(assembler.toModel(actualizar));
         
     }
     
